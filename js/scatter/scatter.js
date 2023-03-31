@@ -1,5 +1,5 @@
 import { getGraphic } from './drag.js'
-import { COLOR, SHAPE, SIZE } from '../constant/constant.js'
+import { COLOR, SHAPE, SIZE, SCATTER_TYPE, LEGEND_NAME } from '../constant/constant.js'
 import { Dep } from '../monitor/dep/index.js';
 
 let graphicList = [];
@@ -49,6 +49,7 @@ function calcPlanList(planArr, type, size) {
 
     const planLine = {
         id: type,
+        name: type,
         type: 'line',
         data: graphicData,
         color: COLOR[type],
@@ -96,6 +97,12 @@ function addLightFurniture(seriesList, pointData, myChart, observerPage) {
     const option = myChart.getOption();
     graphicList = combineGraphicList(option.graphic[0].elements, newGraphicList)
     myChart.setOption({
+        legend: {
+            formatter: function (name) {
+                return LEGEND_NAME[name]
+            },
+            data: ['lightingLine', 'lightFurnitureScatter']
+        },
         series: seriesList,
         graphic: graphicList,
     });
@@ -141,6 +148,12 @@ function addLighting(seriesList, pointData, myChart, observerPage) {
     const option = myChart.getOption();
     graphicList = combineGraphicList(option.graphic[0].elements, newGraphicList)
     myChart.setOption({
+        legend: {
+            formatter: function (name) {
+                return LEGEND_NAME[name]
+            },
+            data: ['lightingLine', 'lightFurnitureScatter']
+        },
         series: seriesList,
         graphic: graphicList
     });
