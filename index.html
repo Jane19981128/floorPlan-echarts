@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="height: 100%">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="./css/index.css" />
+</head>
+
+<body style="height: 100%; margin: 0">
+  <div class="container">
+    <div id="container" style="width: 560px; height: 560px;"></div>
+    <div>
+      <div>
+        <label><input name="doit" type="checkbox" value="lightingLine" />显示灯光点 </label>
+        <label><input name="doit" type="checkbox" value="lightFurnitureScatter" />显示灯具点 </label>
+      </div>
+      <div id="editArea" style="display: block;">
+        <input name="pointData" id="dotId" type="text" value=""  style="display: none;"/>
+        <label>X：<input name="pointData" id="pointX" type="number" value="" /></label><br>
+        <label>Y：<input name="pointData" id="pointY" type="number" value="" /></label><br>
+        <label>离地高：<input name="pointData" id="groundClearance" type="number" value="" />m</label><br>
+        <label>光强：<input name="pointData" id="brightness" type="number" value="" /></label><br>
+        <label>长：<input name="pointData" id="length" type="number" value="" />m</label><br>
+        <label>宽：<input name="pointData" id="width" type="number" value="" />m</label><br>
+      </div>
+      <button id="save">保存</button>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="./js/echarts/echarts.min.js"></script>
+  <!-- Uncomment this line if you want to dataTool extension
+  <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.4.2/dist/extension/dataTool.min.js"></script>
+  -->
+  <!-- Uncomment this line if you want to use gl extension
+  <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+  -->
+  <!-- Uncomment this line if you want to echarts-stat extension
+  <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts-stat@latest/dist/ecStat.min.js"></script>
+  -->
+  <!-- Uncomment these two lines if you want to use bmap extension
+  <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=YOUR_API_KEY"></script>
+  <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.4.2/dist/extension/bmap.min.js"></script>
+  -->
+
+  <script type="text/javascript" src="./js/pointData.js"></script>
+  <script type="module">
+    import { addLightFurniture, calcWallList, addLighting, removeLine, getClickLine, depList } from './js/scatter/scatter.js';
+    import { checkboxChange, addInputListener, saveEchartsToFloorPlan } from './js/index.js';
+    import { Observer } from './js/monitor/observer/index.js';
+
+    var dom = document.getElementById('container');
+    var myChart = echarts.init(dom, null, {
+      renderer: 'canvas',
+      useDirtyRect: false
+    });
+
+    //墙的位置
+    const walls = pointData.plan_data.walls;
+    const { seriesList, maxValue } = calcWallList(walls);
+
+    //初始化echarts
+    init(seriesList, maxValue);
+
+    //设置页面订阅者
+    let pageNodeList = document.getElementsByName('pointData');
+    pageNodeList = Array.prototype.slice.call(pageNodeList);
+    const inputListObject = {};
+    pageNodeList.forEach(item => {
+      inputListObject[item.id] = item
+    });
+
+    const observerPage = new Observer('page', pageNodeList, []);
+
+    checkboxChange(seriesList, myChart, observerPage);
+
+    addInputListener(seriesList, myChart, pageNodeList);
+
+    //散点点击事件
+    myChart.on('click', function (params) {
+      //通过graphic定位散点数据
+      if (params.componentType == 'graphic') {
+        const { lineData, dotData } = getClickLine(seriesList, params.event.target);
+
+        inputListObject.dotId.value = dotData.name;
+        inputListObject.pointX.value = dotData.value[0];
+        inputListObject.pointY.value = dotData.value[1];
+        inputListObject.groundClearance.value = dotData.originDot.groundClearance;
+        inputListObject.brightness.value = dotData.originDot.brightness;
+        inputListObject.length.value = dotData.originDot.length;
+        inputListObject.width.value = dotData.originDot.width;
+      }
+    });
+
+    document.getElementById('save').addEventListener('click', (event) => {
+      saveEchartsToFloorPlan(pointData, seriesList)
+    });
+
+    function init(series, max) {
+      var option = {
+        color: '#000',
+        tooltip: {
+          triggerOn: 'none',
+          trigger: 'axis',
+          // trigger: 'none',
+          axisPointer: {
+            type: 'cross'
+          },
+          formatter: '{c}'
+        },
+        xAxis: {
+          type: 'value',
+          min: 0,
+          max: max
+        },
+        yAxis: {
+          type: 'value',
+          min: -max,
+          max: 0
+        },
+        series: series
+      };
+
+      if (option && typeof option === 'object') {
+        myChart.setOption(option);
+      }
+      //房间名称
+      const roomsNameList = pointData.plan_data.rooms;
+      const roomsGraphic = roomsNameList.map((item, index) => {
+        const positionTemp = [item.position.x, item.position.y];
+
+        return {
+          name: 'room',
+          type: 'text',
+          position: myChart.convertToPixel('grid', positionTemp),
+          style: {
+            text: item.name,
+            fill: 'black',
+            fontSize: 16,
+            x: -8,
+            y: -8
+          }
+        }
+
+      });
+      myChart.setOption({
+        graphic: roomsGraphic
+      });
+
+      window.addEventListener('resize', myChart.resize);
+    }
+  </script>
+</body>
+
+</html>
