@@ -1,6 +1,7 @@
 import { getGraphic } from './drag.js'
 import { COLOR, SHAPE, SIZE, SCATTER_TYPE, LEGEND_NAME } from '../constant/constant.js'
 import { Dep } from '../monitor/dep/index.js';
+import { deepCloneJson } from '../utils.js'
 
 let graphicList = [];
 
@@ -42,8 +43,41 @@ function calcPlanList(planArr, type, size) {
             value,
             symbolSize,
             name,
-            originDot:Object.assign(item),
-            size:size
+            originDot: Object.assign({}, item),
+            size: size
+        };
+    });
+
+    const planLine = {
+        id: type,
+        name: type,
+        type: 'line',
+        data: graphicData,
+        color: COLOR[type],
+        symbol: SHAPE[type],
+        lineStyle: {
+            color: 'rgba(0,0,0, .0)',
+        }
+    };
+
+    return planLine
+}
+
+//计算相机点位
+function calcCameraList(planArr, type, size) {
+    let graphicData = planArr.map((item, index) => {
+        const value = [item.camPos.x / 1000, item.camPos.y / 1000];
+        const symbolSize = 15;
+        const name = type + index;
+        const Z = item.camPos.z / 1000
+
+        return {
+            value,
+            symbolSize,
+            name,
+            originDot: deepCloneJson(item),
+            size: size,
+            posZ: Z
         };
     });
 
@@ -63,7 +97,7 @@ function calcPlanList(planArr, type, size) {
 }
 
 //增加灯家具点位
-function addLightFurniture(seriesList, pointData, myChart, observerPage) {
+function addLightFurniture(seriesList, pointData, myChart, observerFurniture) {
     const lightFurniture = pointData.plan_data.furniture.filter(item => {
         return item.name.includes('灯')
     });
@@ -101,7 +135,7 @@ function addLightFurniture(seriesList, pointData, myChart, observerPage) {
             formatter: function (name) {
                 return LEGEND_NAME[name]
             },
-            data: ['lightingLine', 'lightFurnitureScatter']
+            data: SCATTER_TYPE
         },
         series: seriesList,
         graphic: graphicList,
@@ -111,13 +145,13 @@ function addLightFurniture(seriesList, pointData, myChart, observerPage) {
     lightFurnitureScatter.data.forEach((item, index) => {
         const dep = new Dep(item, item.name);
         //订阅所有发布
-        observerPage.addDep([dep]);
+        observerFurniture.addDep([dep]);
         depList.push(dep);
     });
 }
 
 //增加灯光点位
-function addLighting(seriesList, pointData, myChart, observerPage) {
+function addLighting(seriesList, pointData, myChart, observerFurniture) {
     const lighting = pointData.plan_data.lighting;
     const lightingLine = calcPlanList(lighting, 'lightingLine', SIZE['lightingLine']);
 
@@ -152,7 +186,7 @@ function addLighting(seriesList, pointData, myChart, observerPage) {
             formatter: function (name) {
                 return LEGEND_NAME[name]
             },
-            data: ['lightingLine', 'lightFurnitureScatter']
+            data: SCATTER_TYPE
         },
         series: seriesList,
         graphic: graphicList
@@ -162,9 +196,61 @@ function addLighting(seriesList, pointData, myChart, observerPage) {
     lightingLine.data.forEach((item) => {
         const dep = new Dep(item, item.name);
         //订阅所有发布
-        observerPage.addDep([dep]);
+        observerFurniture.addDep([dep]);
         depList.push(dep);
     });
+}
+
+//增加相机点位
+function addCamera(seriesList, pointData, myChart, observerFurniture) {
+    const camera = pointData.point_data.cameraDataList;
+    const cameraScatter = calcCameraList(camera, 'cameraScatter', SIZE['cameraScatter']);
+
+    const count = seriesList.filter(item => {
+        return item.id === 'cameraScatter'
+    });
+
+    if (count.length) {
+        showLine(seriesList, 'cameraScatter', myChart)
+        return false
+    };
+
+    seriesList.push(cameraScatter);
+    const seriesIndex = seriesList.length - 1;
+    const newGraphicList = echarts.util.map(cameraScatter.data,
+        function (dataItem, dataIndex) {
+            const option = [
+                cameraScatter.data,
+                dataItem,
+                dataIndex,
+                seriesIndex,
+                'cameraScatter',
+                myChart
+            ];
+
+            return getGraphic(...option);
+        });
+    const option = myChart.getOption();
+    graphicList = combineGraphicList(option.graphic[0].elements, newGraphicList)
+    myChart.setOption({
+        legend: {
+            formatter: function (name) {
+                return LEGEND_NAME[name]
+            },
+            data: SCATTER_TYPE
+        },
+        series: seriesList,
+        graphic: graphicList
+    });
+
+    //增加发布者
+    cameraScatter.data.forEach((item) => {
+        const dep = new Dep(item, item.name);
+        //订阅所有发布
+        observerFurniture.addDep([dep]);
+        depList.push(dep);
+    });
+    console.log(cameraScatter)
 }
 
 //隐藏点位
@@ -249,7 +335,7 @@ function setGraphic(type) {
 
 function getClickLine(seriesList, graphic) {
     //定位某条折线信息
-    const name = graphic.id.replace(/[0-9]+/g,"");
+    const name = graphic.id.replace(/[0-9]+/g, "");
     const lineData = seriesList.find((item, index) => {
         return item.id === name
     });
@@ -264,4 +350,7 @@ function getClickLine(seriesList, graphic) {
 
 }
 
-export { calcWallList, addLighting, addLightFurniture, removeLine, getClickLine };
+export {
+    calcWallList, addLighting, addLightFurniture, removeLine, getClickLine,
+    addCamera
+};

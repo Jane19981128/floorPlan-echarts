@@ -1,38 +1,38 @@
 
-import { addLightFurniture, addLighting, removeLine, getClickLine } from './scatter/scatter.js';
+import { addLightFurniture, addLighting, removeLine, getClickLine, addCamera } from './scatter/scatter.js';
 import { setShape, setScale } from './utils.js'
 import { SCATTER_TYPE } from './constant/constant.js'
 
-export function checkboxChange(seriesList, myChart, observerPage) {
-    // var showDomList = [];
-    // showDomList.push(document.getElementById('lightingLine'));
-    // showDomList.push(document.getElementById('lightFurnitureScatter'));
+export function checkboxChange(seriesList, myChart, observerList) {
+    // const furnitureBox = document.getElementById('furnitureBox');
+    // const cameraBox = document.getElementById('cameraBox');
 
+    const {observerFurniture, observerCamera} = observerList
     var checkbox = document.getElementsByName('doit');
     checkbox.forEach(item => {
         item.onclick = () => {
             if (item.checked) {
-                // showDomList.forEach((data) => {
-                //   if (data.id === item.value) {
-                //     data.style.display = 'block';
-                //     return
-                //   }
-                //   data.style.display = 'none';
-                // });
+                // if(item.value === 'cameraScatter'){
+                //     cameraBox.style.display = 'block';
+                //     furnitureBox.style.display = 'none'
+                // }else{
+                //     cameraBox.style.display = 'none';
+                //     furnitureBox.style.display = 'block'
+                // }
 
-                if (item.value == 'lightingLine') {
-                    addLighting(seriesList, pointData, myChart, observerPage);
-                }
-                else {
-                    addLightFurniture(seriesList, pointData, myChart, observerPage);
+                if (item.value === 'lightingLine') {
+                    addLighting(seriesList, pointData, myChart, observerFurniture);
+                };
+
+                if (item.value === 'lightFurnitureScatter') {
+                    addLightFurniture(seriesList, pointData, myChart, observerFurniture);
+                };
+
+                if (item.value === 'cameraScatter') {
+                    addCamera(seriesList, pointData, myChart, observerFurniture);
                 }
             } else {
                 removeLine(seriesList, item.value, myChart);
-                // showDomList.forEach((data) => {
-                //   if (data.id === item.value) {
-                //     data.style.display = 'none';
-                //   }
-                // })
             }
         }
     });
@@ -53,7 +53,14 @@ export function addInputListener(seriesList, myChart, pageNodeList) {
                         dotData.value[1] = parseFloat(event.target.value);
                     };
 
-                    dotData.originDot[event.target.id] = parseFloat(event.target.value);
+                    if (event.target.id === 'pointZ') {
+                        dotData.posZ = parseFloat(event.target.value);
+                    };
+
+                    if(dotData.originDot[event.target.id]){
+                        dotData.originDot[event.target.id] = parseFloat(event.target.value);
+                    };
+    
                     if (event.target.id === 'width') {
                         dotData.symbolSize[0] = parseFloat(event.target.value) * dotData.size
                     };
@@ -85,6 +92,7 @@ export function saveEchartsToFloorPlan(pointData, seriesList) {
     try {
         seriesList.forEach(item => {
             if (item.id) {
+                console.log(item)
                 saveSerietoFloorPlan(pointData, item)
             }
         });
@@ -92,14 +100,23 @@ export function saveEchartsToFloorPlan(pointData, seriesList) {
         
     } catch (error) {
         alert('保存失败！')
+        throw(error)
+        
     }
 }
 
 function saveSerietoFloorPlan(pointData, serie){
     let pointList = [];
     serie.data.forEach(item => {
-        item.originDot.position.x = item.value[0];
-        item.originDot.position.y = item.value[1];
+        if(serie.id != 'cameraScatter'){
+            item.originDot.position.x = item.value[0];
+            item.originDot.position.y = item.value[1];
+        } else {
+            item.originDot.camPos.x = item.value[0] * 1000;
+            item.originDot.camPos.y = item.value[1] * 1000;
+            item.originDot.camPos.z = item.posZ * 1000;
+        }
+        
         pointList.push(item.originDot);
     });
 
@@ -115,5 +132,8 @@ function saveSerietoFloorPlan(pointData, serie){
         furnitureList.forEach((item, index) => {
             item = Object.assign(pointList[index])
         });
+    };
+    if(serie.id === SCATTER_TYPE[2]){
+        pointData.point_data.cameraDataList = pointList;
     };
 }

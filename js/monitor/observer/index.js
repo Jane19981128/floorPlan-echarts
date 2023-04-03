@@ -16,23 +16,43 @@ export class Observer {
     }
     update(val) {
         this.pageDom.forEach(item => {
-            if (item.id === 'pointX') {
-                item.value = val.value[0];
-            } else if (item.id === 'pointY') {
-                item.value = val.value[1];
-            } else if (item.id === 'groundClearance') {
-                item.value = val.originDot.groundClearance;
-            } else if (item.id === 'width') {
-                item.value = val.originDot.width;
-            } else if (item.id === 'length') {
-                item.value = val.originDot.length;
-            } else if (item.id === 'brightness') {
-                item.value = val.originDot.brightness;
-            } else if (item.id === 'dotId') {
-                item.value = val.name
-            } else {
-                item.value = ''
+            switch (item.id) {
+                case 'pointX':
+                    this.setInputVal(item, val.value[0]);
+                    break;
+                case 'pointY':
+                    this.setInputVal(item, val.value[1]);
+                    break;
+                case 'groundClearance':
+                    this.setInputVal(item, val.originDot.groundClearance);
+                    break;
+                case 'width':
+                    this.setInputVal(item, val.originDot.width);
+                    break;
+                case 'length':
+                    this.setInputVal(item, val.originDot.length);
+                    break;
+                case 'brightness':
+                    this.setInputVal(item, val.originDot.brightness);
+                    break;
+                case 'pointZ':
+                    this.setInputVal(item, val.posZ);
+                    break;
+                case 'dotId':
+                    this.setInputVal(item, val.name);
+                    break;
+                default: item.value = '';
             }
         })
+    }
+
+    setInputVal(dom, val) {
+        if (val == undefined) {
+            dom.value = '';
+            dom.disabled = true;
+        } else {
+            dom.value = val;
+            dom.disabled = false;
+        }
     }
 }

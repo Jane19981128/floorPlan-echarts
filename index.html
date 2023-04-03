@@ -13,15 +13,24 @@
       <div>
         <label><input name="doit" type="checkbox" value="lightingLine" />显示灯光点 </label>
         <label><input name="doit" type="checkbox" value="lightFurnitureScatter" />显示灯具点 </label>
+        <label><input name="doit" type="checkbox" value="cameraScatter" />显示相机点 </label>
+
       </div>
       <div id="editArea" style="display: block;">
-        <input name="pointData" id="dotId" type="text" value=""  style="display: none;"/>
-        <label>X：<input name="pointData" id="pointX" type="number" value="" /></label><br>
-        <label>Y：<input name="pointData" id="pointY" type="number" value="" /></label><br>
-        <label>离地高：<input name="pointData" id="groundClearance" type="number" value="" />m</label><br>
-        <label>光强：<input name="pointData" id="brightness" type="number" value="" /></label><br>
-        <label>长：<input name="pointData" id="length" type="number" value="" />m</label><br>
-        <label>宽：<input name="pointData" id="width" type="number" value="" />m</label><br>
+        <div id="furnitureBox" style="display: block;">
+          <input name="pointData" id="dotId" type="text" value="" style="display: none;" />
+          <label>X：<input name="pointData" id="pointX" type="number" value="" /></label><br>
+          <label>Y：<input name="pointData" id="pointY" type="number" value="" /></label><br>
+          <label>Z：<input name="pointData" id="pointZ" type="number" value="" /></label><br>
+          <label>离地高：<input name="pointData" id="groundClearance" type="number" value="" />m</label><br>
+          <label>光强：<input name="pointData" id="brightness" type="number" value="" /></label><br>
+          <label>长：<input name="pointData" id="length" type="number" value="" />m</label><br>
+          <label>宽：<input name="pointData" id="width" type="number" value="" />m</label><br>
+        </div>
+        <!-- <div id="cameraBox" style="display: none;">
+          <label>X：<input name="cameraPoint" id="cameraPointX" type="number" value="" /></label><br>
+          <label>Y：<input name="cameraPoint" id="cameraPointY" type="number" value="" /></label><br>
+        </div> -->
       </div>
       <button id="save">保存</button>
     </div>
@@ -62,18 +71,30 @@
     init(seriesList, maxValue);
 
     //设置页面订阅者
-    let pageNodeList = document.getElementsByName('pointData');
-    pageNodeList = Array.prototype.slice.call(pageNodeList);
+    let furnitureNodeList = document.getElementsByName('pointData');
+    let cameraNodeList = document.getElementsByName('cameraPoint');
+
+    furnitureNodeList = Array.prototype.slice.call(furnitureNodeList);
+
+    // cameraNodeList = Array.prototype.slice.call(cameraNodeList);
+    // cameraNodeList.forEach(item => {
+    //   inputListObject[item.id] = item
+    // });
+    // const observerCamera = new Observer('camera', furnitureNodeList, []);
+
     const inputListObject = {};
-    pageNodeList.forEach(item => {
+    furnitureNodeList.forEach(item => {
       inputListObject[item.id] = item
-    });
+    })
+    const observerFurniture = new Observer('furniture', furnitureNodeList, []);
+    const observerList = {
+      observerFurniture
+      // observerCamera
+    };
 
-    const observerPage = new Observer('page', pageNodeList, []);
+    checkboxChange(seriesList, myChart, observerList);
 
-    checkboxChange(seriesList, myChart, observerPage);
-
-    addInputListener(seriesList, myChart, pageNodeList);
+    addInputListener(seriesList, myChart, furnitureNodeList);
 
     //散点点击事件
     myChart.on('click', function (params) {
@@ -84,6 +105,7 @@
         inputListObject.dotId.value = dotData.name;
         inputListObject.pointX.value = dotData.value[0];
         inputListObject.pointY.value = dotData.value[1];
+        inputListObject.pointZ.value = dotData.posZ;
         inputListObject.groundClearance.value = dotData.originDot.groundClearance;
         inputListObject.brightness.value = dotData.originDot.brightness;
         inputListObject.length.value = dotData.originDot.length;
