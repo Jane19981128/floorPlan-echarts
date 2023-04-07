@@ -65,7 +65,3 @@ function hideTooltip(dataIndex, myChart) {
     type: 'hideTip'
   });
 }
-
-  // function onClick(dataIndex, type, myChart){
-
-  // }

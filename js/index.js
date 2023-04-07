@@ -1,13 +1,14 @@
 
-import { addLightFurniture, addLighting, removeLine, getClickLine, addCamera } from './scatter/scatter.js';
+import { addLightFurniture, addLighting, removeLine, getClickLine, addCamera, getLine, addGraphicPoint } from './scatter/scatter.js';
 import { setShape, setScale } from './utils.js'
-import { SCATTER_TYPE } from './constant/constant.js'
+import { SCATTER_TYPE, COLOR } from './constant/constant.js'
+import { getGraphic } from './scatter/drag.js'
 
 export function checkboxChange(seriesList, myChart, observerList) {
     // const furnitureBox = document.getElementById('furnitureBox');
     // const cameraBox = document.getElementById('cameraBox');
 
-    const {observerFurniture, observerCamera} = observerList
+    const { observerFurniture } = observerList;
     var checkbox = document.getElementsByName('doit');
     checkbox.forEach(item => {
         item.onclick = () => {
@@ -57,10 +58,10 @@ export function addInputListener(seriesList, myChart, pageNodeList) {
                         dotData.posZ = parseFloat(event.target.value);
                     };
 
-                    if(dotData.originDot[event.target.id]){
+                    if (dotData.originDot[event.target.id]) {
                         dotData.originDot[event.target.id] = parseFloat(event.target.value);
                     };
-    
+
                     if (event.target.id === 'width') {
                         dotData.symbolSize[0] = parseFloat(event.target.value) * dotData.size
                     };
@@ -97,18 +98,19 @@ export function saveEchartsToFloorPlan(pointData, seriesList) {
             }
         });
         alert('保存成功！')
-        
+
     } catch (error) {
         alert('保存失败！')
-        throw(error)
-        
+        throw (error)
+
     }
+    console.log(pointData)
 }
 
-function saveSerietoFloorPlan(pointData, serie){
+function saveSerietoFloorPlan(pointData, serie) {
     let pointList = [];
     serie.data.forEach(item => {
-        if(serie.id != 'cameraScatter'){
+        if (serie.id != 'cameraScatter') {
             item.originDot.position.x = item.value[0];
             item.originDot.position.y = item.value[1];
         } else {
@@ -116,15 +118,15 @@ function saveSerietoFloorPlan(pointData, serie){
             item.originDot.camPos.y = item.value[1] * 1000;
             item.originDot.camPos.z = item.posZ * 1000;
         }
-        
+
         pointList.push(item.originDot);
     });
 
-    if(serie.id === SCATTER_TYPE[0]){
+    if (serie.id === SCATTER_TYPE[0]) {
         pointData.plan_data.lighting = pointList;
     };
 
-    if(serie.id === SCATTER_TYPE[1]){
+    if (serie.id === SCATTER_TYPE[1]) {
         const furnitureList = pointData.plan_data.furniture.filter(item => {
             return item.name.includes('灯')
         });
@@ -133,7 +135,43 @@ function saveSerietoFloorPlan(pointData, serie){
             item = Object.assign(pointList[index])
         });
     };
-    if(serie.id === SCATTER_TYPE[2]){
+    if (serie.id === SCATTER_TYPE[2]) {
         pointData.point_data.cameraDataList = pointList;
     };
+}
+
+export function addLightingPoint(seriesList, myChart, observerList) {
+    const { observerFurniture } = observerList
+    let btn = document.getElementById('addLightingPoint');
+    btn.onclick = () => {
+        let checkbox = document.getElementById('lightingLine');
+        const type = checkbox.value;
+        if (!checkbox.checked) {
+            alert('图中未有灯光点！');
+            return
+        }
+        const { lineData, lineIndex } = getLine(seriesList, type);
+        const addPointData = Object.assign({}, lineData.data[0]);
+        const pointIndex = lineData.data.length
+        addPointData.name = checkbox.value + pointIndex;
+        addPointData.value = [0, 0];
+        addPointData.originDot.position = {
+            x: 0,
+            y: 0
+        };
+
+        lineData.data.push(addPointData);
+
+        const option = [
+            lineData.data,
+            addPointData,
+            parseInt(pointIndex),
+            lineIndex,
+            'lightingLine',
+            myChart
+        ];
+
+        const graphic =  getGraphic(...option);
+        addGraphicPoint(graphic, lineData, 'lightingLine', myChart, observerFurniture);
+    }
 }

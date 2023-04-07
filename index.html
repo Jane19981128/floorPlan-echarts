@@ -11,7 +11,7 @@
     <div id="container" style="width: 560px; height: 560px;"></div>
     <div>
       <div>
-        <label><input name="doit" type="checkbox" value="lightingLine" />显示灯光点 </label>
+        <label><input name="doit" type="checkbox" value="lightingLine" id="lightingLine" />显示灯光点 </label>
         <label><input name="doit" type="checkbox" value="lightFurnitureScatter" />显示灯具点 </label>
         <label><input name="doit" type="checkbox" value="cameraScatter" />显示相机点 </label>
 
@@ -31,6 +31,9 @@
           <label>X：<input name="cameraPoint" id="cameraPointX" type="number" value="" /></label><br>
           <label>Y：<input name="cameraPoint" id="cameraPointY" type="number" value="" /></label><br>
         </div> -->
+      </div>
+      <div>
+        <button id="addLightingPoint">增加灯光点</button>
       </div>
       <button id="save">保存</button>
     </div>
@@ -54,7 +57,7 @@
   <script type="text/javascript" src="./js/pointData.js"></script>
   <script type="module">
     import { addLightFurniture, calcWallList, addLighting, removeLine, getClickLine, depList } from './js/scatter/scatter.js';
-    import { checkboxChange, addInputListener, saveEchartsToFloorPlan } from './js/index.js';
+    import { checkboxChange, addInputListener, saveEchartsToFloorPlan, addLightingPoint } from './js/index.js';
     import { Observer } from './js/monitor/observer/index.js';
 
     var dom = document.getElementById('container');
@@ -95,6 +98,8 @@
     checkboxChange(seriesList, myChart, observerList);
 
     addInputListener(seriesList, myChart, furnitureNodeList);
+
+    addLightingPoint(seriesList, myChart, observerList);
 
     //散点点击事件
     myChart.on('click', function (params) {

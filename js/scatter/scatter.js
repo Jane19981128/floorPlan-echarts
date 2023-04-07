@@ -250,7 +250,6 @@ function addCamera(seriesList, pointData, myChart, observerFurniture) {
         observerFurniture.addDep([dep]);
         depList.push(dep);
     });
-    console.log(cameraScatter)
 }
 
 //隐藏点位
@@ -319,6 +318,28 @@ function showLine(seriesList, type, myChart) {
     })
 
 }
+
+function addGraphicPoint(graphic, lineData, type, myChart, observerFurniture) {
+    if (Array.isArray(graphic))
+        graphicList = combineGraphicList(graphicList, graphic);
+    else
+        graphicList = combineGraphicList(graphicList, [graphic]);
+    myChart.setOption({
+        series: [{
+            id: type,
+            type: 'line',
+            data: lineData.data,
+            color: COLOR[type]
+        }],
+        graphic: graphicList
+    });
+
+    const index = lineData.data.length - 1;
+    const dep = new Dep(lineData.data[index], lineData.data[index].name);
+    observerFurniture.addDep([dep]);
+    depList.push(dep);
+
+}
 //整合拖拽点
 function combineGraphicList(oldList, newList) {
     const graphicList = [...oldList, ...newList];
@@ -350,7 +371,17 @@ function getClickLine(seriesList, graphic) {
 
 }
 
+function getLine(seriesList, id) {
+    let lineIndex = 0;
+    const lineData = seriesList.find((item, index) => {
+        lineIndex = index;
+        return item.id === id
+    });
+
+    return { lineData, lineIndex };
+}
+
 export {
     calcWallList, addLighting, addLightFurniture, removeLine, getClickLine,
-    addCamera
+    addCamera, getLine, addGraphicPoint
 };
