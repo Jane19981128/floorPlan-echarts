@@ -93,8 +93,8 @@ export function saveEchartsToFloorPlan(pointData, seriesList) {
     try {
         seriesList.forEach(item => {
             if (item.id) {
-                console.log(item)
-                saveSerietoFloorPlan(pointData, item)
+                console.log(item);
+                saveSerietoFloorPlan(pointData, item);
             }
         });
         alert('保存成功！')
